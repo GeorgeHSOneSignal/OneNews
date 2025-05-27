@@ -14,8 +14,20 @@ struct User: Codable, Identifiable {
 
 
 class UserSession: ObservableObject {
-    @Published var currentUser: User? = nil
-    @Published var subscribedCategories: Set<String> = []
+    @Published var currentUser: User? = nil {
+        didSet {
+            if let user = currentUser {
+                saveUserToDefaults(user)
+            } else {
+                UserDefaults.standard.removeObject(forKey: userKey)
+            }
+        }
+    }
+    @Published var subscribedCategories: Set<String> = [] {
+        didSet {
+            saveSubscribedCategories()
+        }
+    }
     @Published var likedArticles: Set<UUID> = [] {
         didSet {
             saveUUIDSet(likedArticles, forKey: "likedArticles")
@@ -29,6 +41,18 @@ class UserSession: ObservableObject {
     @Published var shouldResetNavigation = false
     @Published var isLoggedIn: Bool = false
 
+    private let subscribedCategoriesKey = "subscribedCategories"
+
+    private func saveSubscribedCategories() {
+        let array = Array(subscribedCategories)
+        UserDefaults.standard.set(array, forKey: subscribedCategoriesKey)
+    }
+
+    private func loadSubscribedCategories() {
+        if let array = UserDefaults.standard.stringArray(forKey: subscribedCategoriesKey) {
+            self.subscribedCategories = Set(array)
+        }
+    }
     
     init() {
         loadUserFromDefaults()
@@ -39,6 +63,7 @@ class UserSession: ObservableObject {
             self.syncOneSignalLoginState()
         }
     }
+    
     func syncOneSignalLoginState() {
         guard isLoggedIn, let email = currentUser?.email else {
             print("Not logged in or email missing — skipping OneSignal sync.")
@@ -74,10 +99,6 @@ class UserSession: ObservableObject {
         print(tags)
     }
 
-
-
-    
-    
     func login(email: String, firstName: String, lastName: String, phone: String) {
         let user = User(
             email: email,

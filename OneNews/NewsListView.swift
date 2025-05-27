@@ -23,8 +23,8 @@ struct NewsListView: View {
     @State private var path: [NavigationRoute] = []
     @State private var savedArticles: Set<UUID> = []
     @State private var likedArticles: Set<UUID> = []
+    @State private var showingSettings = false
 
-    
     var body: some View {
         
 
@@ -66,6 +66,16 @@ struct NewsListView: View {
                         }
                     }
                 }
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        showingSettings = true
+                    }) {
+                        Image(systemName: "gearshape")
+                    }
+                }
+            }
+            .sheet(isPresented: $showingSettings) {
+                SettingsView()
             }
             .navigationDestination(for: NavigationRoute.self) { route in
                 switch route {
